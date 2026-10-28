@@ -1,0 +1,9 @@
+# python venv
+simvenv/
+.venv/
+env/
+
+# byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*py.class

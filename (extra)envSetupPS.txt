@@ -1,0 +1,92 @@
+# This can be also be used if you wish to download and test out this experiment, you will need a python environment with all its dependencies
+
+Because I have not done this before and I generally hate working in PowerShell, yet this project was done on my Windows machine
+-- as believed my Windows machine to be performance-wise stronger, here is a little automated script and how to set it up on your own Windows Powershell (PS)
+
+# 1. Open PS and check if you have any profile for custom scripts
+# it is needed in order to save your scripts and use them as a 1-word command in PS, if none such profiles exist, create one; run:
+
+if (!(Test-Path $PROFILE)) { New-Item -Type File -Force $PROFILE }
+
+You can then open said profile directly in (using same PS terminal):
+-- vscode:
+code $PROFILE
+
+-- notepad:
+notepad $PROFILE
+
+# 2. Create a simple reload function in the profile
+That is needed so that the profile can be reloaded -- your further code will be saved and can be used in any session without needing to restart the PS
+
+function Reload-Profile {
+    . $profile
+    Write-Host "PowerShell profile reloaded successfully." -ForegroundColor Green
+}
+
+And reload by type in the same PS terminal:
+. $PROFILE
+
+-- said step repeats each time you hit save on the $PROFILE file in order to make it take effect
+
+# 3. Function for environment creating inside $PROFILE file:
+
+-- python MUST be installed and available to the PATH on your system
+
+function mkvenv {
+    # 1. Ask user for environment name
+    $envName = Read-Host "Enter virtual environment name (default: venv)"
+    if ([string]::IsNullOrWhiteSpace($envName)) {
+        $envName = "venv"
+    }
+
+    # 2. Create virtual environment in current directory
+    Write-Host "Creating virtual environment '$envName'..." -ForegroundColor Cyan
+    python -m venv $envName
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to create virtual environment. Ensure Python is installed and accessible in your PATH."
+        return
+    }
+
+    # 3. Search working directory for requirements.txt
+    $reqFile = $null
+    if (Test-Path "requirements.txt") {
+        $reqFile = "requirements.txt"
+    } else { # Should not fail if specific convention is not found, will look for similar naming of requirements
+        $foundFiles = Get-ChildItem -Filter "requirements*.txt" -File
+        if ($foundFiles) {
+            $reqFile = $foundFiles[0].Name
+        }
+    }
+
+    # 4. Handle installation or missing requirements
+    $pipPath = Join-Path $envName "Scripts/pip.exe"
+    if ($reqFile -and (Test-Path $reqFile)) {
+        Write-Host "Found requirements file: $reqFile. Upgrading pip and installing dependencies..." -ForegroundColor Green
+        & $pipPath install --upgrade pip
+        & $pipPath install -r $reqFile
+    } else {
+        Write-Host "No requirements file found. Skipping dependency installation. Any dependencies can be installed later manually."
+    }
+
+    # 5. Env activation and deactivation instructions
+    Write-Host ""
+    Write-Host "===============================================================" -ForegroundColor Darkgray
+    Write-Host "Virtual Environment '$envName' is ready." -ForegroundColor Green
+    Write-Host "To activate it, be sure to be in your creation directory, and run:"
+    Write-Host "    .\$envName\Scripts\Activate" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "To deactivate environment, run:"
+    Write-Host "    deactivate" -ForegroundColor Cyan
+    Write-Host "===============================================================" -ForegroundColor Darkgray
+}
+
+# 4. Run the reload as shown at the end of step 2.
+# 5. (in PS) Navigate to the directory you are working in and wish to create the environment // inside where you have downloaded the DTA400_Simulation folder
+# 6. Run: mkvenv
+        -- fill in environment name or leave blank, will name it to default
+        -- script will manage the python dependencies from the "requirements.txt" file or *simularly named
+        -- script will probably NOT manage multiple requirements file.
+            -- if you have like 10 requirements.txt files for the same python env, then you are just weird idk
+        -- can also double packages after you activate venv:
+            -- run:
+            pip list
