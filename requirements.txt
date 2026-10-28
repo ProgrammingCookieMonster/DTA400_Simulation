@@ -1,0 +1,7 @@
+# Install PyTorch FIRST using the command from pytorch.org (CUDA build is fine,
+# we run on CPU anyway), then:  pip install -r requirements.txt
+numpy
+matplotlib
+pandas
+scipy
+tensorboard
