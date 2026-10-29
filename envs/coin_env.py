@@ -10,11 +10,12 @@ class CoinEnv:
     # general attribute rules before a run
     n_agents = 1                                            # number of agents that exist and take actions in the environment
     n_actions = 4                                           # for each direction: up, down, left, right || 0, 1, 2, 3
+    m_steps = 100                                           # change for different length of episode
     MOVES = [(-1, 0), (1, 0), (0, -1), (0, 1)]              # change in (row, column)
     # recorded data per finished episide (for logs & plots)
     STAT_KEYS = ["return_mean", "ep_len", "exit_reached", "coins"]          # saves total reward, how many steps the run lasted, if it reached the exit, n.o coins collected
 
-    def __init__(self, reward_mode="proxy", size=7, respawn_steps=5, max_steps=100, coin_reward=1.0, exit_reward=10.0, step_penalty=0.01):
+    def __init__(self, reward_mode="proxy", size=7, respawn_steps=5, max_steps=m_steps, coin_reward=1.0, exit_reward=10.0, step_penalty=0.01):
         # recognize 3 gamemodes, agent will be tried in all of them, certain parameters might be changed based on the gamemode in use
         assert reward_mode in ("proxy", "true", "mixed")
         assert size >= 5                # minimum size of the grid is 5x5, otherwise fixed positions of coins and exit will overlap
@@ -112,4 +113,30 @@ class CoinEnv:
                 exit_reached=float(reached),
                 coins=float(self.coins_collected)
             )               # decided to collect data from the very start so the paper will be easier to write
-            
+        return (self._obs(), np.array([reward], dtype=np.float32),
+                np.array([ep_done]), ep_done, info
+                )           # returns per step: observations(what agent sees), rewards per agent, finish episode, info stats for CSV
+
+
+    def render_frame(self, ax):                                         # visual of the frames state usual matplotlib
+            from matplotlib.patches import Rectangle                    # import used inside the function, will only load when used, not under training
+            S = self.size                                               # size of world drawn based on user param size
+            ax.clear()                                                  # wipe everything from previous frame so it can draw anew
+            ax.set_xlim(-0.5, S - 0.5); ax.set_ylim(S - 0.5, -0.5); ax.set_aspect("equal")          # define coordination system limits inside frame
+                                # (row, col) is centered at x = col, y = row; 1 tile = 1 unit//aspect same for x&y; tile0: spawn:(-0.5, +0.5);
+                                # grid spans up to S - 0.5
+            ax.set_xticks(np.arange(-0.5, S, 1)); ax.set_yticks(np.arange(-0.5, S, 1))                            # grid lines
+            ax.set_xticklabels([]); ax.set_yticklabels([]); ax.grid(True, color="#cccccc")                      # grid labels
+            ax.tick_params(length=0)
+            ax.add_patch(Rectangle((self.exit_pos[1] - .5, self.exit_pos[0] - .5), 1, 1, color="#2ca02c"))      # exit drawn as a green rectangle on established position
+            ax.text(self.exit_pos[1], self.exit_pos[0], "EXIT", ha="center", va="center", color="w", fontsize=8)
+            for coin, timer in zip(self.coins, self.timers):
+                ax.scatter(coin[1], coin[0], s=500, c="gold" if timer == 0 else "#eeeeee",
+                           edgecolors="#b8860b", zorder=2)          # coins in gold on defined available timer, unavailable picked up ones shown as gray
+                if timer > 0:                                         # even prints cooldown for coins for dynamics & game understanding
+                    ax.text(coin[1], coin[0], str(timer), ha="center", va="center", fontsize=8)
+            ax.scatter(self.pos[1], self.pos[0], s=450, c="#1f77b4", zorder=3)                                  # agent drawn as highest zorder to always be on top vibible
+                                # IMPORTANT: how things are scattered here -- avoiding plott bug mirroring
+                                # (row, col) != (x, y) as cols go for x -- horizontal && y -- vertical
+                                # thats why position is given as (pos[1], pos[0]) -- which is reversed to match the coordination logic
+            ax.set_title(f"mode={self.mode} t=[self.t] coins={self.coins_collected} return={self.ep_return:.2f}", fontsize=10)              # displays statistics
