@@ -1,7 +1,13 @@
 # Install PyTorch FIRST using the command from pytorch.org (CUDA build is fine,
 # we run on CPU anyway), then:  pip install -r requirements.txt
+
+# install PyTorch for cpu only, GPU is heavy and is not used in this project
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 numpy
 matplotlib
 pandas
 scipy
 tensorboard
+torch
+torchvision

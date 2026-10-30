@@ -1,0 +1,7 @@
+### Articles and documentation used for this project ###
+## All counts to have been reviewed during October/November 2026,
+# No responsabilities taken by student/project for modified/removed articles
+
+Git: https://git-scm.com/docs
+PyTorch: https://docs.pytorch.org/tutorials/beginner/introyt/tensors_deeper_tutorial.html
+Verbose: https://www.geeksforgeeks.org/python/verbose-in-python-regex/
