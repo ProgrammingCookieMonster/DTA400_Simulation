@@ -12,8 +12,11 @@ ppo_cfg = dict(lr=3e-4, gamma=0.99, gae_lambda=0.95, clip=0.2, ent_coef=0.01,   
                )
 
 trainer = PPOTrainer(lambda: CoinEnv("proxy"), ppo_cfg, seed=1, log_path="demo_tests/try_log.csv")     # lambda builds 1 CoinEnv, the trainer then makes 16 copy of it, given configurations
+                                                                            # change path if you wanna save it somewhere else
 trainer.train(100_000, watch_key="coins")                                                   # plays 100k game steps, will look for the average coins per episode, proxy wants more coins
 print("Finished training. Learning Curve saved in try_log.csv")
+
+# just run the file, view logs in created CSV
 
 ### Expectation from test file
 ## Given the data & configuration
