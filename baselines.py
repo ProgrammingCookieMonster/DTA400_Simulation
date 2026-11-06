@@ -14,8 +14,8 @@ def make_random_policy(n_actions, seed):
 def make_flee_policy(seed):
     rng = np.random.default_rng(seed)
 
-    def policy(obs, env):
-        actions = np.full(env.n_agents, 4):
+    def policy(obs, env): 
+        actions = np.full(env.n_agents, 4)
         alive_c = env.chaser_pos[env.chaser_alive]
         if len(alive_c) == 0:
             return actions

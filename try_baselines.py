@@ -1,8 +1,8 @@
 # try the baseline agent by playing a few episodes with the envs running on the baseline model
 # nothing is printed for said episodes, only the their average of data
-# this should be enough to rate the baseline model
+# this should be enough to rate the baseline model, compare training model
 
-import pandas
+import pandas as pd
 from envs.zombie_env import ZombieEnv
 from baselines import make_random_policy, make_flee_policy
 
@@ -14,7 +14,7 @@ for name in ("random", "flee"):
         obs = env.reset(seed=ep)
         done = False
         while not done:
-            obs, _, _, done, info = env.step(policy(obs, anv))
-        rows.append(info|["episode_stats"])
+            obs, _, _, done, info = env.step(policy(obs, env))
+        rows.append(info["episode_stats"])
     table = pd.DataFrame(rows)
     print(name, table[["ep_len", "survivors", "deaths_by_chaser"]].mean().round(1).to_dict())

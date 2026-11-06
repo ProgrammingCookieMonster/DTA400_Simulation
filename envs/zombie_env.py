@@ -38,14 +38,14 @@ class ZombieEnv:
                  runner_kill_reward=0.0, team_reward=False, last_k_bonus=0.0,
                  friendly_fire_penalty=0.0, aware=False):
         self.size, self.N, self.M = size, n_runners, n_chasers
-        self.n_walls, self.n_gun = n_walls, n_guns
+        self.n_walls, self.n_guns = n_walls, n_guns
         self.ammo_per_gun, self.max_ammo = ammo_per_gun, max_ammo
         self.chaser_hp0, self.shoot_range = chaser_hp, shoot_range
         self.max_steps, self.last_k = max_steps, last_k
         self.chaser_speed, self.R = chaser_speed, view_radius                                           # default speed is calculated to be enough so nobody dies too fast or everybody is too safe
         #                       a runner sees 5x5 around itself as into 2 tiles every direction + itself, so 2*R+1 = 5
         self.near_chaser_dist = near_chaser_dist
-        self.suvival_reward, self.chaser_hit_reward = survival_reward, chaser_hit_reward
+        self.survival_reward, self.chaser_hit_reward = survival_reward, chaser_hit_reward
         self.chaser_kill_reward, self.runner_kill_reward = chaser_kill_reward, runner_kill_reward       # ff_kills are not rewarded directly, agents should learn later what happens with ffk
         self.team_reward, self.last_k_bonus = team_reward, last_k_bonus
         self.friendly_fire_penalty, self.aware = friendly_fire_penalty, aware
@@ -124,14 +124,14 @@ class ZombieEnv:
         chaser = np.zeros((S, S), dtype=np.float32)                                             # same for runner, fill map with 0s fist
         np.add.at(chaser, (self.chaser_pos[self.chaser_alive, 0], self.chaser_pos[self.chaser_alive, 1]), 1)        # same idea, fill in positions
         gun = np.zeros((S, S), dtype=np.float32)
-        gun[self.gun_pos[self.gun_present, 0], self.gun_pos[self.gun_present, 1], 1] = 1                            # just fill in position of guns
+        gun[self.gun_pos[self.gun_present, 0], self.gun_pos[self.gun_present, 1]] = 1                            # just fill in position of guns
 
         padded = np.pad(np.stack([wall, runner, chaser, gun]), ((0, 0), (R, R), (R, R)))                            # all maps on full_map
         padded[0, :R, :] = 1; padded[0, -R:, :] = 1
         padded[0, :, :R] = 1; padded[0, :, -R:] = 1
                                 # padding the maps so that even a runner at the edge of the map can still get a full 5x5 view, map can be sensed outside map otherwise
         
-        k = 4 * self.with_cells
+        k = 4 * self.win_cells
         n_alive = int(self.runner_alive.sum())                                                      # define all alive runners, this is data all runner see
         armed = self.runner_alive & (self.ammo > 0)                                                 # no gun picked up means no ammo, all runners can see the other runners who are actually armed, they might need to learn to avoid them later on
         obs = np.zeros((N, self.obs_dim), dtype=np.float32)
@@ -262,9 +262,9 @@ class ZombieEnv:
                 self._chaser_move(k)        # move zombie each step
             
         for i in np.where(self.runner_alive)[0]:
-            if (self.chaser_alive & (self.chaser_pos == self.runner_pos[i]).all()).any():               # zombie + runner share same time = runner dies
+            if (self.chaser_alive & (self.chaser_pos == self.runner_pos[i]).all(1)).any():               # zombie + runner share same time = runner dies
                 self.runner_alive[i] = False
-                self.death_by_chaser += 1                                                               # doc stats
+                self.deaths_by_chaser += 1                                                               # doc stats
 
         r[self.runner_alive] += self.survival_reward                                                    # each step a runner is alive is a small reward
         self.alive_steps[self.runner_alive] += 1
@@ -300,23 +300,23 @@ class ZombieEnv:
         S = self.size
         ax.clear()
         ax.set_xlim(-0.5, S - 0.5); ax.set_ylim(S - 0.5, -0.5); ax.set_aspect("equal")
-        ax.set_xticks(np.arrange(-0.5, S, 1)); ax.set_yticks(np.arange(-0.5, S, 1))
+        ax.set_xticks(np.arange(-0.5, S, 1)); ax.set_yticks(np.arange(-0.5, S, 1))
         ax.set_xticklabels([]); ax.set_yticklabels([]); ax.grid(True, color="#dddddd")
         ax.tick_params(length=0)
         for r, c in np.argwhere(self.walls):                                            # render rectangles map, just gray out where walls are
             ax.add_patch(Rectangle((c - .5, r - .5), 1, 1, color="#555555"))
         for p, present in zip(self.gun_pos, self.gun_present):                          # render guns where available
             if present:
-                ax.scatter(p[1], p[0], marker="^", s=160, c="gold", edgecolors="b8860b", zorder=2)      # guns just rendered as golden ^
+                ax.scatter(p[1], p[0], marker="^", s=160, c="gold", edgecolors="#b8860b", zorder=2)      # guns just rendered as golden ^
         for i in range(self.N):                                                         # render runners
             p = self.runner_pos[i]
             if self.runner_alive[i]:                                                    # only if alive
-                ax.scatter(p[i], p[0], s=260, c="#1f77b4", zorder=3)                        # looking for blue circles
+                ax.scatter(p[1], p[0], s=260, c="#1f77b4", zorder=3)                        # looking for blue circles
                 if self.ammo[i] > 0:                                                    # display ammo if available
                     ax.text(p[1], p[0], str(self.ammo[i]), color="w", ha="center", va="center", fontsize=8, zorder=4)
             else:
                 ax.scatter(p[1], p[0], marker="x", s=80, c="#999999", zorder=2)
-        for k in range(self.N):                                                         # zombies
+        for k in range(self.M):                                                         # zombies
             if self.chaser_alive[k]:
                 p = self.chaser_pos[k]
                 ax.scatter(p[1], p[0], marker="s", s=300, c="#d62728", zorder=3)            # zombies = red squares
