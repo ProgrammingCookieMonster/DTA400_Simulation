@@ -20,7 +20,7 @@ def evaluate(env, policy, n_episodes, base_seed):                               
         done = False
         while not done:
             obs, _, _, done, info = env.step(policy(obs, env))                              # collects stats
-        rows.append(dict(episode=ep, **info["episode_start"]))
+        rows.append(dict(episode=ep, **info["episode_stats"]))
     return pd.DataFrame(rows)                                                               # turns list into a DataFrame table
 
 def main():
@@ -70,9 +70,17 @@ def main():
     df = evaluate(env, policy, config.EVAL_EPISODES, config.EVAL_BASE_SEED)
     df.to_csv(os.path.join(run_dir, "eval_episodes.csv"), index=False)                      # save table as csv file, one row per game no column for index
     print(f"\nEVAL {args.exp}/{name}/seed{args.seed} (mean over {len(df)} episodes)")
-    print(df.drop(columns="episodes").mean().round(3).to_string())                          # quick summary stat overview as average 
+    print(df.drop(columns="episode").mean().round(3).to_string())                          # quick summary stat overview as average 
 
 
 
 if __name__ == "__main__":
     main()                                                                                  # does absolutely not run main on import
+
+    # try out trained behaviors  by commands:
+    #   python train.py --exp coin --cond proxy --seed 1 --steps 200000
+    #   python train.py --exp coin --cond true --seed 1 --steps 200000
+
+    #   python train.py --exp zombie --cond C --seed 1 --steps 40000
+    #       tho here only that little steps would not be enough, it is just a test to see if trainer works
+    #       normally these sims could take a good while

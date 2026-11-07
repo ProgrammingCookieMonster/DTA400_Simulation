@@ -2,6 +2,7 @@
 simvenv/
 .venv/
 env/
+runs/
 
 # byte-compiled / optimized / DLL files
 __pycache__/

@@ -13,7 +13,7 @@ EVAL_EPISODES = 100                 # each condition trained on the same 100 map
 EVAL_BASE_SEED = 10_000
 
 # --- Experiment 1 ---
-COIN_ENV = dict(size=7, respawn_steps=5, max_steps=100, coin_reward=1.0, exit_rewards=10.0, step_penalty=0.01)
+COIN_ENV = dict(size=7, respawn_steps=5, max_steps=100, coin_reward=1.0, exit_reward=10.0, step_penalty=0.01)
 COIN_STEPS = 500_000
 COIN_CONDITIONS = {
     "proxy": dict(reward_mode="proxy"),
