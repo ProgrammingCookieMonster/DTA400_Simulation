@@ -17,6 +17,7 @@ for cond in config.all_conditions(args.exp, args.extra):                        
     for seed in config.SEEDS:                                                                           # so every seed runs all possible conditions given
         jobs.append((cond, seed, ["--cond", cond]))
 if args.exp == "zombie":                                                                                # e.g. here we got 4 conds x 5 seeds = 20 jobs/runs
+                                                                                                        # run actually 5 seeds to get confidence figures and tests
     for b in config.BASELINES:
         for seed in config.SEEDS:
             jobs.append((f"baseline_{b}", seed, ["--baseline", b]))
@@ -50,6 +51,8 @@ with ThreadPoolExecutor(max_workers=args.workers) as pool:                      
             # dont want to skip by naming when running the real experiment later
 
 # test whole:
-    # python run_all.py --exp coin
+    # python run_all.py --exp coin --workers 5
     # python run_all.py --exp zombie --workers 5
                                                 # for 5 cpu cores here
+    # It is necessary to run the experiments for both envs
+    # That, if the file for analysis is to be used, as the statistics are based on whatever the this file is producing upon running the envs
